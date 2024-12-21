@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // console.log(propertyId);
 
   let propertyName = "";
-  let max_guests;
+  let max_guests; let timeZone;
 
   const url = `${guestyData.pluginUrl}guesty-server/proxy.php?endpoint=listings/${propertyId}`;
 
@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .then(data => {
       propertyName = data.title;
       max_guests = data.accommodates;
+      timeZone = data.timezone;
       // Update guests options after getting max_guests
       updateGuestsOptions();
     })
@@ -40,6 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
     from: new Date(),
     to: new Date(new Date().setDate(new Date().getDate() + 1)),
   };
+  let selectedBookingDates = dateRange
   let guests = 1;
   let quote = null;
   let amount = 0;
@@ -67,19 +69,21 @@ document.addEventListener("DOMContentLoaded", function () {
       guestSelect.value = guests; // Maintain current selection
     }
   }
-
+  let dateLocale = dateLocale;
+  let dateLocaleTimeZone = "America/New_York";
+  let dateLocaleSetting= {
+      timeZone: dateLocaleTimeZone,
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    }
   function getDate(date) {
     if (!date) return "N/A";
 
     // Convert to EST timezone
-    return new Date(date.toLocaleString("en-US", {
-      timeZone: "America/New_York"
-    })).toLocaleDateString("en-US", {
-      timeZone: "America/New_York",
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    });
+    return new Date(date.toLocaleString(dateLocale, {
+      timeZone: dateLocaleSetting
+    })).toLocaleDateString();
   }
 
   function getDaysBetweenDates(date1, date2) {
@@ -89,7 +93,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function formatPrice(amount) {
-    return `$${amount.toLocaleString("en-US", {
+    return `$${amount.toLocaleString(dateLocale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     })}`;
@@ -131,12 +135,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const listingId = propertyId; // Replace with actual listing ID
 
     // Fix: Use the dateRange object's values and format them correctly
-    const fromDate = dateRange.from.toLocaleDateString('en-CA', {
-      timeZone: 'America/New_York'
-    });
-    const toDate = dateRange.to.toLocaleDateString('en-CA', {
-      timeZone: 'America/New_York'
-    });
+    const fromDate = dateRange.from.toLocaleDateString();
+    const toDate = dateRange.to.toLocaleDateString();
 
     document.getElementById("start-date").value = fromDate;
     document.getElementById("end-date").value = toDate;
@@ -268,13 +268,9 @@ document.addEventListener("DOMContentLoaded", function () {
           loading = false;
           render();
           document.getElementById("start-date").value = dateRange.from
-            .toLocaleDateString('en-CA', {
-              timeZone: "America/New_York"
-            });
+            .toLocaleDateString();
           document.getElementById("end-date").value = dateRange.to
-            .toLocaleDateString('en-CA', {
-              timeZone: "America/New_York"
-            });
+            .toLocaleDateString();
         }
 
         return data;
@@ -286,13 +282,9 @@ document.addEventListener("DOMContentLoaded", function () {
         loading = false;
         render();
         document.getElementById("start-date").value = dateRange.from
-          .toLocaleDateString('en-CA', {
-            timeZone: "America/New_York"
-          });
+          .toLocaleDateString();
         document.getElementById("end-date").value = dateRange.to
-          .toLocaleDateString('en-CA', {
-            timeZone: "America/New_York"
-          });
+          .toLocaleDateString();
       });
   };
 
@@ -462,18 +454,18 @@ document.addEventListener("DOMContentLoaded", function () {
       //fetch availability
       async function fetchAvailability() {
         // Create dates in EST timezone
-        const startDate = new Date(new Date().toLocaleString("en-US", {
-          timeZone: "America/New_York"
+        const startDate = new Date(new Date().toLocaleString(dateLocale, {
+          timeZone: dateLocaleTimeZone
         }));
         const endDate = new Date(startDate);
         endDate.setFullYear(endDate.getFullYear() + 2);
 
         // Format dates in EST
-        const formattedStartDate = startDate.toLocaleDateString('en-CA', {
-          timeZone: "America/New_York"
+        const formattedStartDate = startDate.toLocaleDateString(dateLocale, {
+          timeZone: dateLocaleTimeZone
         });
-        const formattedEndDate = endDate.toLocaleDateString('en-CA', {
-          timeZone: "America/New_York"
+        const formattedEndDate = endDate.toLocaleDateString(dateLocale, {
+          timeZone: dateLocaleTimeZone
         });
 
         const endpoint = `listings/${propertyId}/calendar?from=${formattedStartDate}&to=${formattedEndDate}`;
@@ -495,8 +487,8 @@ document.addEventListener("DOMContentLoaded", function () {
         data.forEach(item => {
           // Create date in EST timezone
           const currentDate = new Date(item.date + 'T00:00:00');
-          const dateStr = currentDate.toLocaleDateString('en-US', {
-            timeZone: 'America/New_York'
+          const dateStr = currentDate.toLocaleDateString(dateLocale, {
+            timeZone: dateLocaleTimeZone
           });
 
           if (item.status === 'unavailable') {
@@ -506,16 +498,16 @@ document.addEventListener("DOMContentLoaded", function () {
             // Get next day in EST
             const nextDate = new Date(currentDate);
             nextDate.setDate(nextDate.getDate() + 1);
-            const nextDateString = nextDate.toLocaleDateString('en-US', {
-              timeZone: 'America/New_York'
+            const nextDateString = nextDate.toLocaleDateString(dateLocale, {
+              timeZone: dateLocaleTimeZone
             });
             const nextDayData = dateStatusMap.get(nextDateString);
 
             // Get previous day in EST
             const prevDate = new Date(currentDate);
             prevDate.setDate(prevDate.getDate() - 1);
-            const prevDateString = prevDate.toLocaleDateString('en-US', {
-              timeZone: 'America/New_York'
+            const prevDateString = prevDate.toLocaleDateString(dateLocale, {
+              timeZone: dateLocaleTimeZone
             });
             const prevDayData = dateStatusMap.get(prevDateString);
 
@@ -559,52 +551,53 @@ document.addEventListener("DOMContentLoaded", function () {
           dateFormat: "Y-m-d",
           maxDate: new Date().fp_incr(365 * 2),
           // Set timezone to EST
-          locale: {
-            timezone: "America/New_York"
-          },
+          // locale: {
+          //   timezone: dateLocaleTimeZone
+          // },
           disable: [
             function (date) {
               // Convert to EST for comparison
-              const estDate = new Date(date.toLocaleString("en-US", {
-                timeZone: "America/New_York"
+              const estDate = new Date(date.toLocaleString(dateLocale, {
+                timeZone: dateLocaleTimeZone
               }));
               return unavailableDates.has(estDate.toLocaleDateString());
             }
           ],
           onChange: function (selectedDates) {
+            selectedBookingDates = selectedDates;
             if (selectedDates.length === 1) {
               // Convert to EST
-              const estDate = new Date(selectedDates[0].toLocaleString("en-US", {
-                timeZone: "America/New_York"
+              const estDate = new Date(selectedDates[0].toLocaleString(dateLocale, {
+                timeZone: dateLocaleTimeZone
               }));
               dateRange.from = estDate;
 
-              const formattedDate = estDate.toLocaleDateString('en-CA', {
-                timeZone: "America/New_York"
-              });
-              document.getElementById("start-date").value = formattedDate;
+              // const formattedDate = estDate.toLocaleDateString(dateLocale, {
+              //   timeZone: dateLocaleTimeZone
+              // });
+              document.getElementById("start-date").value = selectedDates[0].toLocaleDateString();
               document.getElementById("start-date").style.fontWeight = "700";
             } else if (selectedDates.length === 2) {
               // Convert both dates to EST
-              const estStartDate = new Date(selectedDates[0].toLocaleString("en-US", {
-                timeZone: "America/New_York"
+              const estStartDate = new Date(selectedDates[0].toLocaleString(dateLocale, {
+                timeZone: dateLocaleTimeZone
               }));
-              const estEndDate = new Date(selectedDates[1].toLocaleString("en-US", {
-                timeZone: "America/New_York"
+              const estEndDate = new Date(selectedDates[1].toLocaleString(dateLocale, {
+                timeZone: dateLocaleTimeZone
               }));
 
               dateRange.from = estStartDate;
               dateRange.to = estEndDate;
 
-              const startDate = estStartDate.toLocaleDateString('en-CA', {
-                timeZone: "America/New_York"
+              const startDate = estStartDate.toLocaleDateString(dateLocale, {
+                timeZone: dateLocaleTimeZone
               });
-              const endDate = estEndDate.toLocaleDateString('en-CA', {
-                timeZone: "America/New_York"
+              const endDate = estEndDate.toLocaleDateString(dateLocale, {
+                timeZone: dateLocaleTimeZone
               });
 
-              document.getElementById("start-date").value = startDate;
-              document.getElementById("end-date").value = endDate;
+              document.getElementById("start-date").value =selectedDates[0].toLocaleString(;
+              document.getElementById("end-date").value = selectedDates[0].toLocaleString(;
               document.getElementById("start-date").style.fontWeight = "700";
               document.getElementById("end-date").style.fontWeight = "700";
             }
